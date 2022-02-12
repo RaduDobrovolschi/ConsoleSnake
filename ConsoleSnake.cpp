@@ -3,8 +3,8 @@
 #include <Windows.h>
 
 #define sizeY 21
-#define sizeX 42
-#define FoodDuration 5
+#define sizeX sizeY*2
+#define FoodDuration 7
 
 short int A[sizeY][sizeX] = { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                                 -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1,
@@ -55,7 +55,6 @@ void PrintMatrix(unsigned int pts, short int mf) {
 }
 
 void GameOver() {
-    //system("CLS");
     std::cout << "  ______                                            ______                                \n";
     std::cout << " /      \\                                          /      \\                               \n";
     std::cout << "/$$$$$$  |  ______   _____  ____    ______        /$$$$$$  | __     __  ______    ______  \n";
@@ -68,17 +67,21 @@ void GameOver() {
     std::cout << "                                                                                          \n";
 }
 
-void input(short int& Direction) {
-    if (GetKeyState('A') & 0x8000) Direction = 0;
-    if (GetKeyState('W') & 0x8000) Direction = 1;
-    if (GetKeyState('D') & 0x8000) Direction = 2;
-    if (GetKeyState('S') & 0x8000) Direction = 3;
+enum Direction {
+    left, up, right, down, none
+};
+
+void input(Direction &dir) {
+    if (GetKeyState('A') & 0x8000) dir = left;
+    if (GetKeyState('W') & 0x8000) dir = up;
+    if (GetKeyState('D') & 0x8000) dir = right;
+    if (GetKeyState('S') & 0x8000) dir = down;
 }
 
-void sleep(float seconds, short int& Direction) {
+void sleep(float seconds, Direction &dir) {
     clock_t startClock = clock();
     float secondsAhead = seconds * CLOCKS_PER_SEC;
-    while (clock() < startClock + secondsAhead) input(Direction);
+    while (clock() < startClock + secondsAhead) input(dir);
 }
 
 void MoveTail(int Hx, int Hy, unsigned short int pts, bool is) {
@@ -129,21 +132,19 @@ void ClearFood() {
 
 int main() {
     unsigned short int pts = 1, Hy = 10, Hx = 21, tics = 1;
-    short int Direction = 10, OldDir = 10, MissedFood = 0; // 0 left, 1 up, 2 right, 3 down
+    Direction dir = none;
+    short int MissedFood = 0;
     bool foo = 1;
     double speed = 0.07;
     srand(time(NULL));
     CreateFood();
     PrintMatrix(pts, MissedFood);
-    while (Direction == 10) input(Direction);
+    while (dir == none) input(dir);
     clock_t startClock = clock();
     float Ftimmer = FoodDuration * CLOCKS_PER_SEC;
     while (Hx < sizeX - 1 && Hx > 0 && Hy < sizeY - 1 && Hy > 0 && foo && MissedFood < 10) {
         PrintMatrix(pts, MissedFood);
         tics++;
-        //Direction = _getch();
-        //Direction = fgetc(stdin);
-        //Direction = getchar();
         if (!IsFood()) {
             CreateFood();
             MissedFood = 0;
@@ -159,10 +160,9 @@ int main() {
             tics = 0;
             speed -= 0.01;
         }
-        OldDir = Direction;
-        sleep((Direction == 1 || Direction == 3) ? speed * 1.75 : speed, Direction);
-        switch (Direction) {
-        case(0):
+        sleep((dir == up || dir == down) ? speed * 2 : speed, dir);
+        switch (dir) {
+        case(left):
             Hx--;
             if (A[Hy][Hx] > 0) {
                 foo = 0;
@@ -179,7 +179,7 @@ int main() {
                 pts++;
             }
             break;
-        case(1):
+        case(up):
             Hy--;
             if (A[Hy][Hx] > 0) {
                 foo = 0;
@@ -196,7 +196,7 @@ int main() {
                 pts++;
             }
             break;
-        case(2):
+        case(right):
             Hx++;
             if (A[Hy][Hx] > 0) {
                 foo = 0;
@@ -213,7 +213,7 @@ int main() {
                 pts++;
             }
             break;
-        case(3):
+        case(down):
             Hy++;
             if (A[Hy][Hx] > 0) {
                 foo = 0;
